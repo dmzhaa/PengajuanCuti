@@ -25,7 +25,6 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] != 'karyawan') {
 
 <body style="background-color: #f8fafc;">
 
-    <!-- Navbar Topbar -->
     <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #1e3a8a !important;">
         <div class="container py-1">
             <a class="navbar-brand d-flex align-items-center fw-bold" href="#">
@@ -43,7 +42,6 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] != 'karyawan') {
         </div>
     </nav>
 
-    <!-- Container Utama -->
     <div class="container mt-4 mb-4 px-3 px-md-4">
 
         <!-- 1. Statistik Kuota Cuti -->
@@ -57,6 +55,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] != 'karyawan') {
                     </div>
                 </div>
             </div>
+
             <div class="col-md-3">
                 <div class="card shadow-sm stat-card stat-card-green h-100">
                     <div class="card-body p-3">
@@ -66,6 +65,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] != 'karyawan') {
                     </div>
                 </div>
             </div>
+
             <div class="col-md-3">
                 <div class="card shadow-sm stat-card stat-card-red h-100">
                     <div class="card-body p-3">
@@ -75,6 +75,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] != 'karyawan') {
                     </div>
                 </div>
             </div>
+
             <div class="col-md-3">
                 <div class="card shadow-sm stat-card stat-card-yellow h-100">
                     <div class="card-body p-3">
@@ -106,6 +107,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] != 'karyawan') {
                             <option value="Cuti Lainnya">Cuti Lainnya</option>
                             </select>
                         </div>
+
                         <div class="col-md-6">
                             <label class="form-label small fw-semibold">Sisa Jatah Cuti</label>
                             <input type="text" class="form-control bg-light" value="12 Hari" readonly>
@@ -118,6 +120,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] != 'karyawan') {
                             <label class="form-label small fw-semibold">Tanggal Mulai</label>
                             <input type="date" class="form-control" name="tgl_mulai" required>
                         </div>
+                        
                         <div class="col-md-6">
                             <label class="form-label small fw-semibold">Tanggal Selesai</label>
                             <input type="date" class="form-control" name="tgl_selesai" required>
