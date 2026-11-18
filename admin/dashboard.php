@@ -32,35 +32,6 @@ while ($r = mysqli_fetch_assoc($result)) {
     }
 }
 
-function analisisPengajuan($r)
-{
-    $catatan = [];
-    $skor = 0;
-
-    if ($r['durasi'] > $r['sisa']) {
-        $catatan[] = "Durasi {$r['durasi']} hari melebihi sisa jatah ({$r['sisa']} hari).";
-        $skor--;
-    } else {
-        $catatan[] = "Durasi {$r['durasi']} hari masih dalam sisa jatah ({$r['sisa']} hari).";
-        $skor++;
-    }
-    if ($r['durasi'] > 14) {
-        $catatan[] = "Durasi cuti panjang (lebih dari 14 hari), perlu pertimbangan khusus.";
-        $skor--;
-    }
-    if (strtotime($r['tanggal_mulai']) < strtotime(date('Y-m-d', strtotime($r['created_at'])))) {
-        $catatan[] = "Pengajuan dibuat setelah tanggal mulai cuti.";
-        $skor--;
-    }
-    if (strlen(trim($r['alasan'])) < 10) {
-        $catatan[] = "Alasan pengajuan terlalu singkat.";
-        $skor--;
-    }
-
-    $rekom = $skor >= 1 ? 'Disarankan DISETUJUI' : ($skor == 0 ? 'Perlu dipertimbangkan' : 'Disarankan DITOLAK');
-    return ['rekomendasi' => $rekom, 'catatan' => $catatan];
-}
-
 function tgl($d) { return date('d/m/Y', strtotime($d)); }
 ?>
 
@@ -70,9 +41,25 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Admin HRD - Pengajuan Cuti</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="../assets/css/style.css">
+    <style>
+        .badge-soft-pending  { background-color: #fef3c7; color: #b45309; }
+        .badge-soft-approved { background-color: #dcfce7; color: #15803d; }
+        .badge-soft-rejected { background-color: #fee2e2; color: #b91c1c; }
+        .btn-icon-aksi {
+            width: 30px;
+            height: 30px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            border: none;
+            font-size: 13px;
+        }
+    </style>
 </head>
 <body style="background-color: #f8fafc;">
 
@@ -88,7 +75,7 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
                     </div>
                 </div>
             </a>
-            <a href="../logout.php" class="btn btn-outline-light btn-sm ms-auto">
+            <a href="../logout.php" class="btn btn-outline-light btn-sm ms-auto rounded-pill px-3">
                 <i class="bi bi-box-arrow-right me-1"></i> Logout
             </a>
         </div>
@@ -145,18 +132,20 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
         </div>
 
         <!-- 2. Tabel seluruh pengajuan -->
-        <div class="card shadow-sm border rounded-4">
+        <div class="card shadow-sm stat-card mb-4">
             <div class="card-body p-4">
 
-                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                     <h5 class="fw-bold mb-0 text-dark">Seluruh Pengajuan Cuti Karyawan</h5>
-                    <div class="search-box">
-                        <i class="bi bi-search"></i>
-                        <input type="text" id="cari" class="form-control form-control-sm" placeholder="Cari nama / NIK...">
+                    <div class="input-group input-group-sm" style="max-width: 240px;">
+                        <span class="input-group-text bg-white border-end-0 text-muted" style="border-radius: 10px 0 0 10px;">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" id="cari" class="form-control border-start-0" style="border-radius: 0 10px 10px 0;" placeholder="Cari nama / NIK...">
                     </div>
                 </div>
 
-                <div class="d-flex gap-2 mb-3 flex-wrap">
+                <div class="d-flex gap-2 mb-4 flex-wrap">
                     <button class="btn btn-filter-active btn-sm rounded-pill px-3 fw-semibold text-14" data-filter="semua">Semua
                         <span class="badge rounded-circle ms-1"><?php echo $stat['total']; ?></span></button>
                     <button class="btn btn-filter btn-sm rounded-pill px-3 fw-semibold text-14" data-filter="pending">Pending
@@ -167,7 +156,7 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
                         <span class="badge rounded-circle ms-1"><?php echo $stat['rejected']; ?></span></button>
                 </div>
 
-                <div class="table-responsive border rounded-3">
+                <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0 text-14">
                         <thead class="bg-table-header">
                             <tr class="text-muted text-xs text-uppercase">
@@ -187,13 +176,12 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
                             <?php endif; ?>
 
                             <?php foreach ($data as $i => $r):
-                                $ai = analisisPengajuan($r);
                                 $badgeMap = [
-                                    'pending'  => ['bg-soft-yellow', 'Pending'],
-                                    'approved' => ['bg-soft-green', 'Disetujui'],
-                                    'rejected' => ['bg-soft-red', 'Ditolak']
+                                    'pending'  => ['badge-soft-pending', 'Pending'],
+                                    'approved' => ['badge-soft-approved', 'Disetujui'],
+                                    'rejected' => ['badge-soft-rejected', 'Ditolak']
                                 ];
-                                $badge = $badgeMap[$r['status']] ?? ['bg-secondary', $r['status']];
+                                $badge = $badgeMap[$r['status']] ?? ['bg-secondary text-white', $r['status']];
                             ?>
                                 <tr data-status="<?php echo $r['status']; ?>"
                                     data-cari="<?php echo htmlspecialchars(strtolower($r['nama'] . ' ' . $r['nik'])); ?>">
@@ -207,36 +195,58 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
                                         <div><?php echo tgl($r['tanggal_mulai']); ?></div>
                                         <div class="text-muted text-xs"><?php echo tgl($r['tanggal_selesai']); ?></div>
                                     </td>
-                                    <td><span class="badge bg-soft-blue text-primary fw-semibold"><?php echo $r['durasi']; ?> hr</span></td>
+                                    <td><span class="badge bg-soft-blue text-primary fw-semibold px-2 py-1"><?php echo $r['durasi']; ?> hr</span></td>
                                     <td>
-                                        <span class="fw-semibold text-success"><?php echo $r['sisa']; ?></span>
+                                        <span class="fw-semibold <?php echo $r['sisa'] > 0 ? 'text-success' : 'text-primary'; ?>"><?php echo $r['sisa']; ?></span>
                                         <span class="text-muted">/ <?php echo KUOTA_TAHUNAN; ?></span>
                                     </td>
                                     <td>
-                                        <span class="badge rounded-pill <?php echo $badge[0]; ?> fw-semibold">
-                                            <i class="bi bi-circle-fill icon-dot me-1"></i><?php echo $badge[1]; ?>
+                                        <span class="badge rounded-pill <?php echo $badge[0]; ?> fw-semibold px-3 py-1">
+                                            &bull; <?php echo $badge[1]; ?>
                                         </span>
                                     </td>
                                     <td class="text-center">
-                                        <div class="d-inline-flex gap-1">
-                                            <button type="button" class="btn-aksi btn-aksi-yellow" title="Proses / ubah status"
+                                        <?php if ($r['status'] === 'pending'): ?>
+                                            <div class="d-inline-flex gap-1">
+                                                <button type="button" class="btn-icon-aksi"
+                                                    style="background-color: #dcfce7; color: #16a34a;"
+                                                    title="Setujui"
+                                                    data-bs-toggle="modal" data-bs-target="#modalStatus"
+                                                    data-id="<?php echo $r['id']; ?>"
+                                                    data-nama="<?php echo htmlspecialchars($r['nama']); ?>"
+                                                    data-jenis="<?php echo htmlspecialchars($r['jenis_cuti']); ?>"
+                                                    data-alasan="<?php echo htmlspecialchars($r['alasan']); ?>"
+                                                    data-aksi="approved"
+                                                    data-catatan="<?php echo htmlspecialchars($r['catatan_hrd'] ?? ''); ?>">
+                                                    <i class="bi bi-check-lg"></i>
+                                                </button>
+                                                <button type="button" class="btn-icon-aksi"
+                                                    style="background-color: #fee2e2; color: #dc2626;"
+                                                    title="Tolak"
+                                                    data-bs-toggle="modal" data-bs-target="#modalStatus"
+                                                    data-id="<?php echo $r['id']; ?>"
+                                                    data-nama="<?php echo htmlspecialchars($r['nama']); ?>"
+                                                    data-jenis="<?php echo htmlspecialchars($r['jenis_cuti']); ?>"
+                                                    data-alasan="<?php echo htmlspecialchars($r['alasan']); ?>"
+                                                    data-aksi="rejected"
+                                                    data-catatan="<?php echo htmlspecialchars($r['catatan_hrd'] ?? ''); ?>">
+                                                    <i class="bi bi-x-lg"></i>
+                                                </button>
+                                            </div>
+                                        <?php else: ?>
+                                            <button type="button" class="btn-icon-aksi"
+                                                style="background-color: #fef3c7; color: #d97706;"
+                                                title="Ubah Keputusan"
                                                 data-bs-toggle="modal" data-bs-target="#modalStatus"
                                                 data-id="<?php echo $r['id']; ?>"
                                                 data-nama="<?php echo htmlspecialchars($r['nama']); ?>"
                                                 data-jenis="<?php echo htmlspecialchars($r['jenis_cuti']); ?>"
                                                 data-alasan="<?php echo htmlspecialchars($r['alasan']); ?>"
-                                                data-status="<?php echo $r['status']; ?>"
+                                                data-aksi="<?php echo $r['status']; ?>"
                                                 data-catatan="<?php echo htmlspecialchars($r['catatan_hrd'] ?? ''); ?>">
                                                 <i class="bi bi-arrow-repeat"></i>
                                             </button>
-                                            <button type="button" class="btn-aksi btn-aksi-purple" title="Analisis pengajuan"
-                                                data-bs-toggle="modal" data-bs-target="#modalAI"
-                                                data-nama="<?php echo htmlspecialchars($r['nama']); ?>"
-                                                data-rekom="<?php echo htmlspecialchars($ai['rekomendasi']); ?>"
-                                                data-catatan="<?php echo htmlspecialchars(json_encode($ai['catatan'])); ?>">
-                                                <i class="bi bi-lightbulb"></i>
-                                            </button>
-                                        </div>
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -250,8 +260,8 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
     <!-- Modal proses status -->
     <div class="modal fade" id="modalStatus" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
-            <form class="modal-content rounded-4" action="../proses/proses_approval.php" method="POST">
-                <div class="modal-header">
+            <form class="modal-content border-0 shadow" style="border-radius: 16px;" action="../proses/proses_approval.php" method="POST">
+                <div class="modal-header border-bottom-0 pb-0">
                     <h5 class="modal-title fw-bold">Proses Pengajuan Cuti</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
@@ -279,29 +289,11 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
                     <label class="form-label small fw-semibold">Catatan HRD (wajib jika ditolak)</label>
                     <textarea class="form-control" name="catatan" id="st-catatan" rows="3" placeholder="Tuliskan catatan untuk karyawan..."></textarea>
                 </div>
-                <div class="modal-footer">
+                <div class="modal-footer border-top-0 pt-0">
                     <button type="button" class="btn btn-custom-reset px-4 fw-semibold text-14" data-bs-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-custom-submit px-4 fw-semibold text-14">Simpan Keputusan</button>
                 </div>
             </form>
-        </div>
-    </div>
-
-    <!-- Modal analisis -->
-    <div class="modal fade" id="modalAI" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content rounded-4">
-                <div class="modal-header">
-                    <h5 class="modal-title fw-bold"><i class="bi bi-lightbulb me-2 text-purple"></i>Analisis Pengajuan</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-2"><small class="text-muted">Karyawan</small>
-                        <div class="fw-semibold" id="ai-nama"></div></div>
-                    <div class="alert alert-light border fw-semibold" id="ai-rekom"></div>
-                    <ul class="small mb-0" id="ai-catatan"></ul>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -332,21 +324,8 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
             document.getElementById('st-jenis').textContent = b.dataset.jenis;
             document.getElementById('st-alasan').textContent = b.dataset.alasan;
             document.getElementById('st-catatan').value = b.dataset.catatan;
-            document.getElementById('aksi-setujui').checked = b.dataset.status === 'approved';
-            document.getElementById('aksi-tolak').checked = b.dataset.status === 'rejected';
-        });
-
-        document.getElementById('modalAI').addEventListener('show.bs.modal', e => {
-            const b = e.relatedTarget;
-            document.getElementById('ai-nama').textContent = b.dataset.nama;
-            document.getElementById('ai-rekom').textContent = b.dataset.rekom;
-            const ul = document.getElementById('ai-catatan');
-            ul.innerHTML = '';
-            JSON.parse(b.dataset.catatan).forEach(t => {
-                const li = document.createElement('li');
-                li.textContent = t;
-                ul.appendChild(li);
-            });
+            document.getElementById('aksi-setujui').checked = b.dataset.aksi === 'approved';
+            document.getElementById('aksi-tolak').checked = b.dataset.aksi === 'rejected';
         });
     </script>
 </body>

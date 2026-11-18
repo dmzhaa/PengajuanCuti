@@ -50,11 +50,28 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Karyawan - Pengajuan Cuti</title>
     <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <!-- CSS Lokal -->
     <link rel="stylesheet" href="../assets/css/style.css">
+    <style>
+        .badge-soft-pending  { background-color: #fef3c7; color: #b45309; }
+        .badge-soft-approved { background-color: #dcfce7; color: #15803d; }
+        .badge-soft-rejected { background-color: #fee2e2; color: #b91c1c; }
+        .btn-icon-aksi {
+            width: 30px;
+            height: 30px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            border: none;
+            font-size: 13px;
+            text-decoration: none;
+        }
+    </style>
 </head>
 
 <body style="background-color: #f8fafc;">
@@ -70,7 +87,7 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
                     </div>
                 </div>
             </a>
-            <a href="../logout.php" class="btn btn-outline-light btn-sm ms-auto">
+            <a href="../logout.php" class="btn btn-outline-light btn-sm ms-auto rounded-pill px-3">
                 <i class="bi bi-arrow-right-square me-1"></i> Logout
             </a>
         </div>
@@ -185,13 +202,13 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
             </div>
         </div>
 
-        <!-- 3. Tabel riwayat pengauan cuti -->
+        <!-- 3. Tabel riwayat pengajuan cuti -->
         <div class="card shadow-sm stat-card mb-4">
             <div class="card-body p-4">
 
                 <!-- Header Tabel -->
                 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-                    <h5 class="fw-bold mb-0 text-dark">Riwayat Pengajuan</h5>
+                    <h5 class="fw-bold mb-0 text-dark">Riwayat Pengajuan Saya</h5>
                     <div class="d-flex gap-2 flex-wrap">
                         <!-- Tombol Filter -->
                         <button class="btn btn-filter-active btn-sm rounded-pill px-3 fw-semibold text-14" data-filter="semua">Semua
@@ -213,46 +230,78 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
                 </div>
 
                 <!-- Tabel Data -->
-                <div class="table-responsive border rounded-3">
+                <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0 text-14">
                         <thead class="bg-table-header">
                             <tr class="text-muted text-xs text-uppercase">
                                 <th class="ps-3">No</th>
                                 <th>Jenis Cuti</th>
-                                <th>Tanggal</th>
+                                <th>Tanggal Mulai</th>
+                                <th>Tanggal Selesai</th>
                                 <th>Durasi</th>
-                                <th>Alasan</th>
-                                <th>Catatan HRD</th>
+                                <th>Sisa Jatah</th>
                                 <th>Status</th>
+                                <th>Catatan HRD</th>
+                                <th class="text-center">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="tabel-body">
                             <?php if (count($riwayat) == 0): ?>
-                                <tr><td colspan="7" class="text-center text-muted py-4">Belum ada riwayat pengajuan cuti.</td></tr>
+                                <tr><td colspan="9" class="text-center text-muted py-4">Belum ada riwayat pengajuan cuti.</td></tr>
                             <?php endif; ?>
 
                             <?php foreach ($riwayat as $i => $r):
                                 $badgeMap = [
-                                    'pending'  => ['bg-soft-yellow', 'Pending'],
-                                    'approved' => ['bg-soft-green', 'Disetujui'],
-                                    'rejected' => ['bg-soft-red', 'Ditolak']
+                                    'pending'  => ['badge-soft-pending', 'Pending'],
+                                    'approved' => ['badge-soft-approved', 'Disetujui'],
+                                    'rejected' => ['badge-soft-rejected', 'Ditolak']
                                 ];
-                                $badge = $badgeMap[$r['status']] ?? ['bg-secondary', $r['status']];
+                                $badge = $badgeMap[$r['status']] ?? ['bg-secondary text-white', $r['status']];
                             ?>
                                 <tr data-status="<?php echo $r['status']; ?>">
                                     <td class="ps-3 text-muted"><?php echo $i + 1; ?></td>
-                                    <td class="fw-semibold"><?php echo htmlspecialchars($r['jenis_cuti']); ?></td>
                                     <td>
-                                        <div><?php echo tgl($r['tanggal_mulai']); ?></div>
-                                        <div class="text-muted text-xs"><?php echo tgl($r['tanggal_selesai']); ?></div>
+                                        <div class="fw-semibold"><?php echo htmlspecialchars($r['jenis_cuti']); ?></div>
+                                        <div class="text-muted text-xs"><?php echo htmlspecialchars($r['alasan']); ?></div>
                                     </td>
-                                    <td><span class="badge bg-soft-blue text-primary fw-semibold"><?php echo $r['jumlah_hari']; ?> hr</span></td>
-                                    <td><?php echo htmlspecialchars($r['alasan']); ?></td>
-                                    <td class="text-muted small"><?php echo !empty($r['catatan_hrd']) ? htmlspecialchars($r['catatan_hrd']) : '-'; ?></td>
+                                    <td><?php echo tgl($r['tanggal_mulai']); ?></td>
+                                    <td><?php echo tgl($r['tanggal_selesai']); ?></td>
+                                    <td><span class="badge bg-soft-blue text-primary fw-semibold px-2 py-1"><?php echo $r['jumlah_hari']; ?> hr</span></td>
                                     <td>
-                                        <span class="badge rounded-pill <?php echo $badge[0]; ?> fw-semibold">
-                                            <i class="bi bi-circle-fill icon-dot me-1"></i><?php echo $badge[1]; ?>
+                                        <span class="fw-semibold text-success"><?php echo $sisa_jatah; ?></span>
+                                        <span class="text-muted">/ <?php echo KUOTA_TAHUNAN; ?></span>
+                                    </td>
+                                    <td>
+                                        <span class="badge rounded-pill <?php echo $badge[0]; ?> fw-semibold px-3 py-1">
+                                            &bull; <?php echo $badge[1]; ?>
                                         </span>
+                                    </td>
+                                    <td class="text-muted small"><?php echo !empty($r['catatan_hrd']) ? htmlspecialchars($r['catatan_hrd']) : '—'; ?></td>
+                                    <td class="text-center">
+                                        <?php if ($r['status'] === 'pending'): ?>
+                                            <div class="d-inline-flex gap-1">
+                                                <button type="button" class="btn-icon-aksi btn-edit"
+                                                    style="background-color: #fef3c7; color: #d97706;"
+                                                    title="Edit"
+                                                    data-bs-toggle="modal" data-bs-target="#modalEdit"
+                                                    data-id="<?php echo $r['id']; ?>"
+                                                    data-jenis="<?php echo htmlspecialchars($r['jenis_cuti']); ?>"
+                                                    data-mulai="<?php echo $r['tanggal_mulai']; ?>"
+                                                    data-selesai="<?php echo $r['tanggal_selesai']; ?>"
+                                                    data-alasan="<?php echo htmlspecialchars($r['alasan']); ?>">
+                                                    <i class="bi bi-pencil-square"></i>
+                                                </button>
+                                                <a href="../proses/proses_hapus_cuti.php?id=<?php echo $r['id']; ?>"
+                                                    class="btn-icon-aksi"
+                                                    style="background-color: #f1f5f9; color: #475569;"
+                                                    title="Hapus"
+                                                    onclick="return confirm('Yakin ingin menghapus pengajuan cuti ini?')">
+                                                    <i class="bi bi-trash"></i>
+                                                </a>
+                                            </div>
+                                        <?php else: ?>
+                                            <span class="text-muted small">—</span>
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -264,6 +313,48 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
         </div>
 
     </div> <!-- Akhir Container Utama -->
+
+    <!-- Modal Edit Pengajuan -->
+    <div class="modal fade" id="modalEdit" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form class="modal-content border-0 shadow" style="border-radius: 16px;" action="../proses/proses_edit_cuti.php" method="POST">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <h5 class="modal-title fw-bold">Edit Pengajuan Cuti</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="id" id="edit-id">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Jenis Cuti</label>
+                        <select class="form-select" name="jenis_cuti" id="edit-jenis" required>
+                            <option value="Cuti Tahunan">Cuti Tahunan</option>
+                            <option value="Cuti Sakit">Cuti Sakit</option>
+                            <option value="Cuti Darurat">Cuti Darurat</option>
+                            <option value="Cuti Lainnya">Cuti Lainnya</option>
+                        </select>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Tanggal Mulai</label>
+                            <input type="date" class="form-control" name="tgl_mulai" id="edit-mulai" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Tanggal Selesai</label>
+                            <input type="date" class="form-control" name="tgl_selesai" id="edit-selesai" required>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small fw-semibold">Alasan Pengajuan</label>
+                        <textarea class="form-control" name="alasan" id="edit-alasan" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0">
+                    <button type="button" class="btn btn-custom-reset px-4 fw-semibold text-14" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-custom-submit px-4 fw-semibold text-14">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
@@ -277,6 +368,15 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
                     tr.style.display = (filter === 'semua' || tr.dataset.status === filter) ? '' : 'none';
                 });
             });
+        });
+
+        document.getElementById('modalEdit').addEventListener('show.bs.modal', e => {
+            const b = e.relatedTarget;
+            document.getElementById('edit-id').value = b.dataset.id;
+            document.getElementById('edit-jenis').value = b.dataset.jenis;
+            document.getElementById('edit-mulai').value = b.dataset.mulai;
+            document.getElementById('edit-selesai').value = b.dataset.selesai;
+            document.getElementById('edit-alasan').value = b.dataset.alasan;
         });
     </script>
 
