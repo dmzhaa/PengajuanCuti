@@ -37,21 +37,23 @@ if ($selesai <= $mulai) {
 
 $jumlah_hari = $mulai->diff($selesai)->days;
 
-// cek sisa kuota (kecuali pengajuan yang sedang diedit ini)
-$tahun   = $mulai->format('Y');
-$q_kuota = mysqli_prepare($koneksi, "SELECT COALESCE(SUM(jumlah_hari), 0) AS total FROM pengajuan_cuti WHERE user_id = ? AND id != ? AND status IN ('approved', 'pending') AND YEAR(tanggal_mulai) = ?");
-mysqli_stmt_bind_param($q_kuota, "iis", $user_id, $id, $tahun);
-mysqli_stmt_execute($q_kuota);
-$data_kuota = mysqli_fetch_assoc(mysqli_stmt_get_result($q_kuota));
+// cek sisa kuota (khusus Cuti Tahunan, kecuali pengajuan seng lagi diedit)
+if ($jenis_cuti === 'Cuti Tahunan') {
+    $tahun   = $mulai->format('Y');
+    $q_kuota = mysqli_prepare($koneksi, "SELECT COALESCE(SUM(jumlah_hari), 0) AS total FROM pengajuan_cuti WHERE user_id = ? AND id != ? AND jenis_cuti = 'Cuti Tahunan' AND status IN ('approved', 'pending') AND YEAR(tanggal_mulai) = ?");
+    mysqli_stmt_bind_param($q_kuota, "iis", $user_id, $id, $tahun);
+    mysqli_stmt_execute($q_kuota);
+    $data_kuota = mysqli_fetch_assoc(mysqli_stmt_get_result($q_kuota));
 
-$sisa = 12 - (int)$data_kuota['total'];
-if ($jumlah_hari > $sisa) {
-    $_SESSION['flash'] = ['tipe' => 'warning', 'pesan' => "Sisa kuota cuti tahun $tahun tinggal $sisa hari."];
-    header("location: ../karyawan/dashboard.php");
-    exit;
+    $sisa = 12 - (int)$data_kuota['total'];
+    if ($jumlah_hari > $sisa) {
+        $_SESSION['flash'] = ['tipe' => 'warning', 'pesan' => "Sisa kuota cuti tahun $tahun tinggal $sisa hari."];
+        header("location: ../karyawan/dashboard.php");
+        exit;
+    }
 }
 
-// update hanya jika milik user ini dan status masih pending
+// update gor nek gone user iki karo status ish pending
 $stmt = mysqli_prepare($koneksi, "UPDATE pengajuan_cuti SET jenis_cuti = ?, tanggal_mulai = ?, tanggal_selesai = ?, jumlah_hari = ?, alasan = ? WHERE id = ? AND user_id = ? AND status = 'pending'");
 mysqli_stmt_bind_param($stmt, "sssisii", $jenis_cuti, $tgl_mulai, $tgl_selesai, $jumlah_hari, $alasan, $id, $user_id);
 

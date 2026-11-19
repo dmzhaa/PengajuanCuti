@@ -107,3 +107,21 @@ body .btn-custom-submit:hover {
 .card.form-card {
     border: 1px solid #cbd5e1;
 }
+
+/* Status Badge & Tombol Aksi Tabel (punya dasboard karyawan dan admin) */
+.badge-soft-pending  { background-color: #fef3c7; color: #b45309; }
+.badge-soft-approved { background-color: #dcfce7; color: #15803d; }
+.badge-soft-rejected { background-color: #fee2e2; color: #b91c1c; }
+
+.btn-icon-aksi {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: none;
+    font-size: 13px;
+    text-decoration: none;
+}

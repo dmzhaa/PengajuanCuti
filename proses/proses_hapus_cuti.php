@@ -17,7 +17,7 @@ if ($id <= 0) {
     exit;
 }
 
-// hapus cuma klo milik user ini dan status masih pending
+// ngehapus gor nek gone user iki, karo status ish pending
 $stmt = mysqli_prepare($koneksi, "DELETE FROM pengajuan_cuti WHERE id = ? AND user_id = ? AND status = 'pending'");
 mysqli_stmt_bind_param($stmt, "ii", $id, $user_id);
 

@@ -2,7 +2,7 @@
 session_start();
 require_once '../koneksi.php';
 
-// Hanya HRD yang boleh memproses
+// gor HRD seng iso proses
 if (!isset($_SESSION['role']) || $_SESSION['role'] != 'hrd') {
     header("location: ../index.php");
     exit;

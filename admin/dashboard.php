@@ -9,16 +9,17 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] != 'hrd') {
 
 define('KUOTA_TAHUNAN', 12);
 
-$sql = "SELECT p.*, u.nik, u.nama,
-               p.jumlah_hari AS durasi,
-               (SELECT COALESCE(SUM(x.jumlah_hari), 0)
-                  FROM pengajuan_cuti x
-                 WHERE x.user_id = p.user_id
-                   AND x.status = 'approved'
-                   AND YEAR(x.tanggal_mulai) = YEAR(p.tanggal_mulai)) AS terpakai
-        FROM pengajuan_cuti p
-        JOIN users u ON u.id = p.user_id
-        ORDER BY p.id DESC";
+$sql = "SELECT pengajuan_cuti.*, users.nik, users.nama,
+               pengajuan_cuti.jumlah_hari AS durasi,
+               (SELECT COALESCE(SUM(riwayat_cuti.jumlah_hari), 0)
+                  FROM pengajuan_cuti AS riwayat_cuti
+                 WHERE riwayat_cuti.user_id = pengajuan_cuti.user_id
+                   AND riwayat_cuti.jenis_cuti = 'Cuti Tahunan'
+                   AND riwayat_cuti.status = 'approved'
+                   AND YEAR(riwayat_cuti.tanggal_mulai) = YEAR(pengajuan_cuti.tanggal_mulai)) AS terpakai
+        FROM pengajuan_cuti
+        JOIN users ON users.id = pengajuan_cuti.user_id
+        ORDER BY pengajuan_cuti.id DESC";
 $result = mysqli_query($koneksi, $sql);
 
 $data = [];
@@ -43,27 +44,10 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
     <title>Dashboard Admin HRD - Pengajuan Cuti</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="../assets/css/style.css">
-    <style>
-        .badge-soft-pending  { background-color: #fef3c7; color: #b45309; }
-        .badge-soft-approved { background-color: #dcfce7; color: #15803d; }
-        .badge-soft-rejected { background-color: #fee2e2; color: #b91c1c; }
-        .btn-icon-aksi {
-            width: 30px;
-            height: 30px;
-            padding: 0;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 8px;
-            border: none;
-            font-size: 13px;
-        }
-    </style>
+    <link rel="stylesheet" href="../assets/css/style.css?v=<?php echo time(); ?>">
 </head>
 <body style="background-color: #f8fafc;">
 
-    <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #1e3a8a !important;">
         <div class="container py-1">
             <a class="navbar-brand d-flex align-items-center fw-bold" href="#">
@@ -91,7 +75,7 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
             <?php unset($_SESSION['flash']); ?>
         <?php endif; ?>
 
-        <!-- 1. Statistik -->
+        <!-- Statistik -->
         <div class="row g-3 mb-4">
             <div class="col-md-3">
                 <div class="card shadow-sm stat-card stat-card-blue h-100">
@@ -102,6 +86,7 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
                     </div>
                 </div>
             </div>
+
             <div class="col-md-3">
                 <div class="card shadow-sm stat-card stat-card-yellow h-100">
                     <div class="card-body p-3">
@@ -111,6 +96,7 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
                     </div>
                 </div>
             </div>
+
             <div class="col-md-3">
                 <div class="card shadow-sm stat-card stat-card-green h-100">
                     <div class="card-body p-3">
@@ -120,6 +106,7 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
                     </div>
                 </div>
             </div>
+
             <div class="col-md-3">
                 <div class="card shadow-sm stat-card stat-card-red h-100">
                     <div class="card-body p-3">
@@ -131,7 +118,7 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
             </div>
         </div>
 
-        <!-- 2. Tabel seluruh pengajuan -->
+        <!-- tabel seluruh pengajuan -->
         <div class="card shadow-sm stat-card mb-4">
             <div class="card-body p-4">
 
@@ -186,27 +173,41 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
                                 <tr data-status="<?php echo $r['status']; ?>"
                                     data-cari="<?php echo htmlspecialchars(strtolower($r['nama'] . ' ' . $r['nik'])); ?>">
                                     <td class="ps-3 text-muted"><?php echo $i + 1; ?></td>
+                                    
                                     <td>
                                         <div class="fw-semibold"><?php echo htmlspecialchars($r['nama']); ?></div>
                                         <div class="text-muted text-xs">NIK: <?php echo htmlspecialchars($r['nik']); ?></div>
                                     </td>
+                                    
                                     <td><?php echo htmlspecialchars($r['jenis_cuti']); ?></td>
+                                    
                                     <td>
                                         <div><?php echo tgl($r['tanggal_mulai']); ?></div>
                                         <div class="text-muted text-xs"><?php echo tgl($r['tanggal_selesai']); ?></div>
                                     </td>
-                                    <td><span class="badge bg-soft-blue text-primary fw-semibold px-2 py-1"><?php echo $r['durasi']; ?> hr</span></td>
+                                    
                                     <td>
-                                        <span class="fw-semibold <?php echo $r['sisa'] > 0 ? 'text-success' : 'text-primary'; ?>"><?php echo $r['sisa']; ?></span>
-                                        <span class="text-muted">/ <?php echo KUOTA_TAHUNAN; ?></span>
+                                        <span class="badge bg-soft-blue text-primary fw-semibold px-2 py-1"><?php echo $r['durasi']; ?> hr</span>
                                     </td>
+                                    
+                                    <td>
+                                        <?php if ($r['jenis_cuti'] === 'Cuti Tahunan'): ?>
+                                            <span class="fw-semibold <?php echo $r['sisa'] > 0 ? 'text-success' : 'text-primary'; ?>"><?php echo $r['sisa']; ?></span>
+                                            <span class="text-muted">/ <?php echo KUOTA_TAHUNAN; ?></span>
+                                        <?php else: ?>
+                                            <span class="text-muted">—</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    
                                     <td>
                                         <span class="badge rounded-pill <?php echo $badge[0]; ?> fw-semibold px-3 py-1">
                                             &bull; <?php echo $badge[1]; ?>
                                         </span>
                                     </td>
+                                    
                                     <td class="text-center">
                                         <?php if ($r['status'] === 'pending'): ?>
+
                                             <div class="d-inline-flex gap-1">
                                                 <button type="button" class="btn-icon-aksi"
                                                     style="background-color: #dcfce7; color: #16a34a;"
@@ -220,6 +221,7 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
                                                     data-catatan="<?php echo htmlspecialchars($r['catatan_hrd'] ?? ''); ?>">
                                                     <i class="bi bi-check-lg"></i>
                                                 </button>
+
                                                 <button type="button" class="btn-icon-aksi"
                                                     style="background-color: #fee2e2; color: #dc2626;"
                                                     title="Tolak"
@@ -233,7 +235,9 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
                                                     <i class="bi bi-x-lg"></i>
                                                 </button>
                                             </div>
+
                                         <?php else: ?>
+
                                             <button type="button" class="btn-icon-aksi"
                                                 style="background-color: #fef3c7; color: #d97706;"
                                                 title="Ubah Keputusan"
@@ -246,6 +250,7 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
                                                 data-catatan="<?php echo htmlspecialchars($r['catatan_hrd'] ?? ''); ?>">
                                                 <i class="bi bi-arrow-repeat"></i>
                                             </button>
+
                                         <?php endif; ?>
                                     </td>
                                 </tr>
@@ -257,7 +262,7 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
         </div>
     </div>
 
-    <!-- Modal proses status -->
+    <!-- proses status -->
     <div class="modal fade" id="modalStatus" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <form class="modal-content border-0 shadow" style="border-radius: 16px;" action="../proses/proses_approval.php" method="POST">
@@ -265,21 +270,33 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
                     <h5 class="modal-title fw-bold">Proses Pengajuan Cuti</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
+
                 <div class="modal-body">
                     <input type="hidden" name="id" id="st-id">
-                    <div class="mb-2"><small class="text-muted">Karyawan</small>
-                        <div class="fw-semibold" id="st-nama"></div></div>
-                    <div class="mb-2"><small class="text-muted">Jenis Cuti</small>
-                        <div id="st-jenis"></div></div>
-                    <div class="mb-3"><small class="text-muted">Alasan</small>
-                        <div id="st-alasan" class="bg-light rounded p-2 small"></div></div>
+
+                    <div class="mb-2">
+                        <small class="text-muted">Karyawan</small>
+                        <div class="fw-semibold" id="st-nama"></div>
+                    </div>
+
+                    <div class="mb-2">
+                        <small class="text-muted">Jenis Cuti</small>
+                        <div id="st-jenis"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted">Alasan</small>
+                        <div id="st-alasan" class="bg-light rounded p-2 small"></div>
+                    </div>
 
                     <label class="form-label small fw-semibold">Keputusan</label>
+
                     <div class="d-flex gap-3 mb-3 keputusan">
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="aksi" id="aksi-setujui" value="approved" required>
                             <label class="form-check-label text-success fw-semibold" for="aksi-setujui">Setujui</label>
                         </div>
+                        
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="aksi" id="aksi-tolak" value="rejected">
                             <label class="form-check-label text-danger fw-semibold" for="aksi-tolak">Tolak</label>
@@ -289,15 +306,17 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
                     <label class="form-label small fw-semibold">Catatan HRD (wajib jika ditolak)</label>
                     <textarea class="form-control" name="catatan" id="st-catatan" rows="3" placeholder="Tuliskan catatan untuk karyawan..."></textarea>
                 </div>
+                
                 <div class="modal-footer border-top-0 pt-0">
                     <button type="button" class="btn btn-custom-reset px-4 fw-semibold text-14" data-bs-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-custom-submit px-4 fw-semibold text-14">Simpan Keputusan</button>
                 </div>
+  
             </form>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
     <script src="../assets/js/script.js?v=<?php echo time(); ?>"></script>
     <script>
         let filterAktif = 'semua';
