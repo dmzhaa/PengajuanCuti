@@ -352,7 +352,7 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
                 </div>
 
                 <div class="modal-footer border-top-0 pt-0">
-                    <button type="button" class="btn btn-custom-reset px-4 fw-semibold text-14" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-custom-rseset px-4 fw-semibold text-14" data-bs-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-custom-submit px-4 fw-semibold text-14">Simpan Perubahan</button>
                 </div>
 
