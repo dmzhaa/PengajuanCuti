@@ -134,12 +134,12 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
                     <span class="badge bg-warning text-dark me-2">Form</span> Pengajuan Cuti
                 </h5>
 
-                <form action="../proses/proses_cuti.php" method="POST">
+                <form action="../proses/proses_cuti.php" method="POST" enctype="multipart/form-data" id="form-cuti">
 
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
                             <label class="form-label small fw-semibold">Jenis Cuti</label>
-                            <select class="form-select" name="jenis_cuti" required>
+                            <select class="form-select" name="jenis_cuti" id="jenis-cuti" required>
                                 <option value="" selected disabled>Pilih Jenis Cuti</option>
                                 <option value="Cuti Tahunan">Cuti Tahunan</option>
                                 <option value="Cuti Sakit">Cuti Sakit</option>
@@ -166,6 +166,13 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
                             <label class="form-label small fw-semibold">Tanggal Selesai</label>
                             <input type="date" class="form-control" name="tgl_selesai" required>
                         </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold" id="label-lampiran">
+                            Lampiran Bukti <span class="text-muted fw-normal">(Opsional — JPG, PNG, PDF maks. 2MB)</span>
+                        </label>
+                        <input type="file" class="form-control" name="lampiran" id="input-lampiran" accept=".jpg,.jpeg,.png,.pdf">
                     </div>
 
                     <div class="mb-4">
@@ -246,6 +253,11 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
                                     <td>
                                         <div class="fw-semibold"><?php echo htmlspecialchars($r['jenis_cuti']); ?></div>
                                         <div class="text-muted text-xs"><?php echo htmlspecialchars($r['alasan']); ?></div>
+                                        <?php if (!empty($r['lampiran'])): ?>
+                                            <a href="../uploads/<?php echo htmlspecialchars($r['lampiran']); ?>" target="_blank" class="badge bg-light text-primary border text-decoration-none mt-1">
+                                                <i class="bi bi-paperclip"></i> Lihat Bukti
+                                            </a>
+                                        <?php endif; ?>
                                     </td>
                                     
                                     <td><?php echo tgl($r['tanggal_mulai']); ?></td>
@@ -280,7 +292,8 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
                                                     data-jenis="<?php echo htmlspecialchars($r['jenis_cuti']); ?>"
                                                     data-mulai="<?php echo $r['tanggal_mulai']; ?>"
                                                     data-selesai="<?php echo $r['tanggal_selesai']; ?>"
-                                                    data-alasan="<?php echo htmlspecialchars($r['alasan']); ?>">
+                                                    data-alasan="<?php echo htmlspecialchars($r['alasan']); ?>"
+                                                    data-lampiran="<?php echo htmlspecialchars($r['lampiran'] ?? ''); ?>">
                                                     <i class="bi bi-pencil-square"></i>
                                                 </button>
                                                 <a href="../proses/proses_hapus_cuti.php?id=<?php echo $r['id']; ?>"
@@ -311,7 +324,7 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
     <!-- edit pengajuan cuti -->
     <div class="modal fade" id="modalEdit" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
-            <form class="modal-content border-0 shadow" style="border-radius: 16px;" action="../proses/proses_edit_cuti.php" method="POST">
+            <form class="modal-content border-0 shadow" style="border-radius: 16px;" action="../proses/proses_edit_cuti.php" method="POST" enctype="multipart/form-data">
 
                 <div class="modal-header border-bottom-0 pb-0">
                     <h5 class="modal-title fw-bold">Edit Pengajuan Cuti</h5>
@@ -344,6 +357,12 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
 
                     </div>
 
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Ganti Lampiran <span class="text-muted fw-normal">(Opsional)</span></label>
+                        <input type="file" class="form-control" name="lampiran" id="edit-lampiran" accept=".jpg,.jpeg,.png,.pdf">
+                        <small class="text-muted text-xs d-block mt-1" id="edit-lampiran-info"></small>
+                    </div>
+
                     <div class="mb-2">
                         <label class="form-label small fw-semibold">Alasan Pengajuan</label>
                         <textarea class="form-control" name="alasan" id="edit-alasan" rows="3" required></textarea>
@@ -373,6 +392,27 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
             });
         });
 
+        // toggle wajib upload nek milih Cuti Sakit
+        const selectJenis   = document.getElementById('jenis-cuti');
+        const inputLampiran = document.getElementById('input-lampiran');
+        const labelLampiran = document.getElementById('label-lampiran');
+        const defaultLabel  = labelLampiran.innerHTML;
+
+        selectJenis.addEventListener('change', () => {
+            if (selectJenis.value === 'Cuti Sakit') {
+                inputLampiran.required = true;
+                labelLampiran.innerHTML = 'Lampiran Surat Dokter / Bukti <span class="text-danger">*</span> <span class="text-muted fw-normal">(Wajib untuk Cuti Sakit)</span>';
+            } else {
+                inputLampiran.required = false;
+                labelLampiran.innerHTML = defaultLabel;
+            }
+        });
+
+        document.getElementById('form-cuti').addEventListener('reset', () => {
+            inputLampiran.required = false;
+            labelLampiran.innerHTML = defaultLabel;
+        });
+
         document.getElementById('modalEdit').addEventListener('show.bs.modal', e => {
             const b = e.relatedTarget;
             document.getElementById('edit-id').value = b.dataset.id;
@@ -380,6 +420,12 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
             document.getElementById('edit-mulai').value = b.dataset.mulai;
             document.getElementById('edit-selesai').value = b.dataset.selesai;
             document.getElementById('edit-alasan').value = b.dataset.alasan;
+            document.getElementById('edit-lampiran').value = '';
+
+            const info = document.getElementById('edit-lampiran-info');
+            info.textContent = b.dataset.lampiran
+                ? 'Lampiran saat ini sudah ada. Kosongkan jika tidak ingin mengganti.'
+                : 'Belum ada lampiran. Kosongkan jika tidak perlu.';
         });
     </script>
 

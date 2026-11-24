@@ -2,7 +2,7 @@
 session_start();
 require_once '../koneksi.php';
 
-// cuma karyawan yang boleh masuk
+// gor karyawan sek olh mlebu
 if (!isset($_SESSION['role']) || $_SESSION['role'] != 'karyawan') {
     header("location: ../index.php");
     exit;
@@ -15,7 +15,7 @@ function kembali($tipe, $pesan)
     exit;
 }
 
-// cuma bsa diakses lewat submit form (POST)
+// gor iso diakses lewat submit form (POST)
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     kembali('danger', 'Permintaan tidak valid.');
 }
@@ -42,7 +42,7 @@ if ($end <= $start) {
 
 $jumlah_hari = $start->diff($end)->days;
 
-// ngecek sisa kuota tahunan (khusus Cuti Tahunan, termasuk karo seng ish pending ben ora spam)
+// ngecek sisa kuota tahunan (khusus cuti tahunan, termasuk karo seng ish pending ben ora spam)
 if ($jenis_cuti === 'Cuti Tahunan') {
     define('KUOTA_TAHUNAN', 12);
     $tahun = $start->format('Y');
@@ -66,13 +66,53 @@ if ($jenis_cuti === 'Cuti Tahunan') {
     }
 }
 
+// handle upload lampiran (wajib nek Cuti loro, opsional nggo liyane sih)
+$nama_lampiran = null;
+$ada_file      = isset($_FILES['lampiran']) && $_FILES['lampiran']['error'] !== UPLOAD_ERR_NO_FILE;
+
+if ($jenis_cuti === 'Cuti Sakit' && !$ada_file) {
+    kembali('warning', 'Cuti Sakit wajib melampirkan surat dokter atau bukti pendukung.');
+}
+
+if ($ada_file) {
+    if ($_FILES['lampiran']['error'] !== UPLOAD_ERR_OK) {
+        kembali('danger', 'Terjadi kesalahan saat mengunggah file lampiran.');
+    }
+
+    $ekstensi_boleh = ['jpg', 'jpeg', 'png', 'pdf'];
+    $nama_asli      = $_FILES['lampiran']['name'];
+    $ukuran_file    = $_FILES['lampiran']['size'];
+    $tmp_file       = $_FILES['lampiran']['tmp_name'];
+    $ext            = strtolower(pathinfo($nama_asli, PATHINFO_EXTENSION));
+
+    if (!in_array($ext, $ekstensi_boleh)) {
+        kembali('warning', 'Format file harus JPG, JPEG, PNG, atau PDF.');
+    }
+
+    if ($ukuran_file > 2 * 1024 * 1024) {
+        kembali('warning', 'Ukuran file maksimal 2MB.');
+    }
+
+    $nama_lampiran = time() . '_' . uniqid() . '.' . $ext;
+    $tujuan_upload = '../uploads/' . $nama_lampiran;
+
+    if (!move_uploaded_file($tmp_file, $tujuan_upload)) {
+        kembali('danger', 'Gagal menyimpan file lampiran ke server.');
+    }
+}
+
 // nyimpen pengajuan ke database
-$stmt = mysqli_prepare($koneksi, "INSERT INTO pengajuan_cuti (user_id, jenis_cuti, tanggal_mulai, tanggal_selesai, jumlah_hari, alasan) 
-                                  VALUES (?, ?, ?, ?, ?, ?)");
-mysqli_stmt_bind_param($stmt, "isssis", $user_id, $jenis_cuti, $tgl_mulai, $tgl_selesai, $jumlah_hari, $alasan);
+$stmt = mysqli_prepare($koneksi, "INSERT INTO pengajuan_cuti (user_id, jenis_cuti, tanggal_mulai, tanggal_selesai, jumlah_hari, alasan, lampiran) 
+                                  VALUES (?, ?, ?, ?, ?, ?, ?)");
+mysqli_stmt_bind_param($stmt, "isssiss", $user_id, $jenis_cuti, $tgl_mulai, $tgl_selesai, $jumlah_hari, $alasan, $nama_lampiran);
 
 if (mysqli_stmt_execute($stmt)) {
     kembali('success', "Pengajuan cuti ($jumlah_hari hari) berhasil dikirim dan menunggu persetujuan HRD.");
+}
+
+// hapus file nek query gagal ben ora nyampah nang folder uploads
+if ($nama_lampiran !== null && file_exists('../uploads/' . $nama_lampiran)) {
+    unlink('../uploads/' . $nama_lampiran);
 }
 
 kembali('danger', 'Gagal menyimpan pengajuan cuti.');

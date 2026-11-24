@@ -179,7 +179,14 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
                                         <div class="text-muted text-xs">NIK: <?php echo htmlspecialchars($r['nik']); ?></div>
                                     </td>
                                     
-                                    <td><?php echo htmlspecialchars($r['jenis_cuti']); ?></td>
+                                    <td>
+                                        <div><?php echo htmlspecialchars($r['jenis_cuti']); ?></div>
+                                        <?php if (!empty($r['lampiran'])): ?>
+                                            <a href="../uploads/<?php echo htmlspecialchars($r['lampiran']); ?>" target="_blank" class="badge bg-light text-primary border text-decoration-none mt-1">
+                                                <i class="bi bi-paperclip"></i> Lihat Bukti
+                                            </a>
+                                        <?php endif; ?>
+                                    </td>
                                     
                                     <td>
                                         <div><?php echo tgl($r['tanggal_mulai']); ?></div>
@@ -217,6 +224,7 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
                                                     data-nama="<?php echo htmlspecialchars($r['nama']); ?>"
                                                     data-jenis="<?php echo htmlspecialchars($r['jenis_cuti']); ?>"
                                                     data-alasan="<?php echo htmlspecialchars($r['alasan']); ?>"
+                                                    data-lampiran="<?php echo htmlspecialchars($r['lampiran'] ?? ''); ?>"
                                                     data-aksi="approved"
                                                     data-catatan="<?php echo htmlspecialchars($r['catatan_hrd'] ?? ''); ?>">
                                                     <i class="bi bi-check-lg"></i>
@@ -230,6 +238,7 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
                                                     data-nama="<?php echo htmlspecialchars($r['nama']); ?>"
                                                     data-jenis="<?php echo htmlspecialchars($r['jenis_cuti']); ?>"
                                                     data-alasan="<?php echo htmlspecialchars($r['alasan']); ?>"
+                                                    data-lampiran="<?php echo htmlspecialchars($r['lampiran'] ?? ''); ?>"
                                                     data-aksi="rejected"
                                                     data-catatan="<?php echo htmlspecialchars($r['catatan_hrd'] ?? ''); ?>">
                                                     <i class="bi bi-x-lg"></i>
@@ -246,6 +255,7 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
                                                 data-nama="<?php echo htmlspecialchars($r['nama']); ?>"
                                                 data-jenis="<?php echo htmlspecialchars($r['jenis_cuti']); ?>"
                                                 data-alasan="<?php echo htmlspecialchars($r['alasan']); ?>"
+                                                data-lampiran="<?php echo htmlspecialchars($r['lampiran'] ?? ''); ?>"
                                                 data-aksi="<?php echo $r['status']; ?>"
                                                 data-catatan="<?php echo htmlspecialchars($r['catatan_hrd'] ?? ''); ?>">
                                                 <i class="bi bi-arrow-repeat"></i>
@@ -287,6 +297,13 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
                     <div class="mb-3">
                         <small class="text-muted">Alasan</small>
                         <div id="st-alasan" class="bg-light rounded p-2 small"></div>
+                    </div>
+
+                    <div class="mb-3 d-none" id="st-lampiran-box">
+                        <small class="text-muted d-block mb-1">Lampiran</small>
+                        <a href="#" target="_blank" id="st-lampiran-link" class="badge bg-light text-primary border text-decoration-none py-1 px-2">
+                            <i class="bi bi-paperclip"></i> Lihat Bukti
+                        </a>
                     </div>
 
                     <label class="form-label small fw-semibold">Keputusan</label>
@@ -345,6 +362,14 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
             document.getElementById('st-catatan').value = b.dataset.catatan;
             document.getElementById('aksi-setujui').checked = b.dataset.aksi === 'approved';
             document.getElementById('aksi-tolak').checked = b.dataset.aksi === 'rejected';
+
+            const boxLampiran = document.getElementById('st-lampiran-box');
+            if (b.dataset.lampiran) {
+                document.getElementById('st-lampiran-link').href = '../uploads/' + b.dataset.lampiran;
+                boxLampiran.classList.remove('d-none');
+            } else {
+                boxLampiran.classList.add('d-none');
+            }
         });
     </script>
 </body>

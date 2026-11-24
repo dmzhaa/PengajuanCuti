@@ -37,7 +37,19 @@ if ($selesai <= $mulai) {
 
 $jumlah_hari = $mulai->diff($selesai)->days;
 
-// cek sisa kuota (khusus Cuti Tahunan, kecuali pengajuan seng lagi diedit)
+// jipuk data lawas sek nggo ngecek lampiran & status pending
+$q_lama = mysqli_prepare($koneksi, "SELECT lampiran FROM pengajuan_cuti WHERE id = ? AND user_id = ? AND status = 'pending'");
+mysqli_stmt_bind_param($q_lama, "ii", $id, $user_id);
+mysqli_stmt_execute($q_lama);
+$data_lama = mysqli_fetch_assoc(mysqli_stmt_get_result($q_lama));
+
+if (!$data_lama) {
+    $_SESSION['flash'] = ['tipe' => 'danger', 'pesan' => 'Pengajuan tidak ditemukan atau sudah diproses HRD.'];
+    header("location: ../karyawan/dashboard.php");
+    exit;
+}
+
+// cek sisa kuota (khusus cuti tahunan, kecuali pengajuan seng lagi diedit)
 if ($jenis_cuti === 'Cuti Tahunan') {
     $tahun   = $mulai->format('Y');
     $q_kuota = mysqli_prepare($koneksi, "SELECT COALESCE(SUM(jumlah_hari), 0) AS total FROM pengajuan_cuti WHERE user_id = ? AND id != ? AND jenis_cuti = 'Cuti Tahunan' AND status IN ('approved', 'pending') AND YEAR(tanggal_mulai) = ?");
@@ -53,14 +65,68 @@ if ($jenis_cuti === 'Cuti Tahunan') {
     }
 }
 
-// update gor nek gone user iki karo status ish pending
-$stmt = mysqli_prepare($koneksi, "UPDATE pengajuan_cuti SET jenis_cuti = ?, tanggal_mulai = ?, tanggal_selesai = ?, jumlah_hari = ?, alasan = ? WHERE id = ? AND user_id = ? AND status = 'pending'");
-mysqli_stmt_bind_param($stmt, "sssisii", $jenis_cuti, $tgl_mulai, $tgl_selesai, $jumlah_hari, $alasan, $id, $user_id);
+$lampiran_lama = $data_lama['lampiran'];
+$lampiran_baru = $lampiran_lama;
+$ada_file      = isset($_FILES['lampiran']) && $_FILES['lampiran']['error'] !== UPLOAD_ERR_NO_FILE;
 
-if (mysqli_stmt_execute($stmt) && mysqli_stmt_affected_rows($stmt) > 0) {
+// nek user upload file pengganti
+if ($ada_file) {
+    if ($_FILES['lampiran']['error'] !== UPLOAD_ERR_OK) {
+        $_SESSION['flash'] = ['tipe' => 'danger', 'pesan' => 'Gagal mengunggah file lampiran.'];
+        header("location: ../karyawan/dashboard.php");
+        exit;
+    }
+
+    $boleh  = ['jpg', 'jpeg', 'png', 'pdf'];
+    $nama   = $_FILES['lampiran']['name'];
+    $ukuran = $_FILES['lampiran']['size'];
+    $tmp    = $_FILES['lampiran']['tmp_name'];
+    $ext    = strtolower(pathinfo($nama, PATHINFO_EXTENSION));
+
+    if (!in_array($ext, $boleh)) {
+        $_SESSION['flash'] = ['tipe' => 'warning', 'pesan' => 'Format file harus JPG, JPEG, PNG, atau PDF.'];
+        header("location: ../karyawan/dashboard.php");
+        exit;
+    }
+
+    if ($ukuran > 2 * 1024 * 1024) {
+        $_SESSION['flash'] = ['tipe' => 'warning', 'pesan' => 'Ukuran file maksimal 2MB.'];
+        header("location: ../karyawan/dashboard.php");
+        exit;
+    }
+
+    $nama_file = time() . '_' . uniqid() . '.' . $ext;
+    if (!move_uploaded_file($tmp, '../uploads/' . $nama_file)) {
+        $_SESSION['flash'] = ['tipe' => 'danger', 'pesan' => 'Gagal menyimpan file ke folder uploads.'];
+        header("location: ../karyawan/dashboard.php");
+        exit;
+    }
+
+    $lampiran_baru = $nama_file;
+}
+
+// nek diubah dadi cuti sakit tapi blas rung ono lampiran
+if ($jenis_cuti === 'Cuti Sakit' && empty($lampiran_baru)) {
+    $_SESSION['flash'] = ['tipe' => 'warning', 'pesan' => 'Cuti Sakit wajib melampirkan surat dokter atau bukti pendukung.'];
+    header("location: ../karyawan/dashboard.php");
+    exit;
+}
+
+// update gor nek gone user iki karo status ish pending
+$stmt = mysqli_prepare($koneksi, "UPDATE pengajuan_cuti SET jenis_cuti = ?, tanggal_mulai = ?, tanggal_selesai = ?, jumlah_hari = ?, alasan = ?, lampiran = ? WHERE id = ? AND user_id = ? AND status = 'pending'");
+mysqli_stmt_bind_param($stmt, "sssissii", $jenis_cuti, $tgl_mulai, $tgl_selesai, $jumlah_hari, $alasan, $lampiran_baru, $id, $user_id);
+
+if (mysqli_stmt_execute($stmt)) {
+    // nek ganti file anyar, hapus file lawase ben ora nyampah
+    if ($ada_file && !empty($lampiran_lama) && file_exists('../uploads/' . $lampiran_lama)) {
+        unlink('../uploads/' . $lampiran_lama);
+    }
     $_SESSION['flash'] = ['tipe' => 'success', 'pesan' => 'Pengajuan cuti berhasil diperbarui.'];
 } else {
-    $_SESSION['flash'] = ['tipe' => 'danger', 'pesan' => 'Gagal mengubah pengajuan atau status sudah diproses HRD.'];
+    if ($ada_file && !empty($lampiran_baru) && file_exists('../uploads/' . $lampiran_baru)) {
+        unlink('../uploads/' . $lampiran_baru);
+    }
+    $_SESSION['flash'] = ['tipe' => 'danger', 'pesan' => 'Gagal mengubah pengajuan cuti.'];
 }
 
 header("location: ../karyawan/dashboard.php");
