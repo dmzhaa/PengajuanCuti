@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Nov 19, 2026 at 03:29 AM
+-- Generation Time: Nov 24, 2026 at 06:10 AM
 -- Server version: 8.0.30
 -- PHP Version: 8.1.10
 
@@ -35,6 +35,7 @@ CREATE TABLE `pengajuan_cuti` (
   `tanggal_selesai` date NOT NULL,
   `jumlah_hari` int NOT NULL,
   `alasan` text NOT NULL,
+  `lampiran` varchar(255) DEFAULT NULL,
   `catatan_hrd` text,
   `status` enum('pending','approved','rejected') NOT NULL DEFAULT 'pending',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
@@ -44,11 +45,12 @@ CREATE TABLE `pengajuan_cuti` (
 -- Dumping data for table `pengajuan_cuti`
 --
 
-INSERT INTO `pengajuan_cuti` (`id`, `user_id`, `jenis_cuti`, `tanggal_mulai`, `tanggal_selesai`, `jumlah_hari`, `alasan`, `catatan_hrd`, `status`, `created_at`) VALUES
-(2, 2, 'Cuti Tahunan', '2026-11-21', '2026-11-22', 1, 'Liburan', 'Selamat liburan', 'approved', '2026-11-18 10:19:08'),
-(3, 2, 'Cuti Tahunan', '2026-01-01', '2026-01-02', 1, 'mau main GTA 6', 'no', 'rejected', '2026-11-18 12:36:08'),
-(4, 2, 'Cuti Melahirkan', '2026-01-01', '2026-02-01', 31, 'Lahiran', 'Semoga lancar dan selamat', 'approved', '2026-11-19 02:25:15'),
-(6, 2, 'Cuti Sakit', '2026-11-19', '2026-11-20', 1, 'Tolong kaki saya sakit', 'semoga lekas sembuh', 'approved', '2026-11-19 02:34:15');
+INSERT INTO `pengajuan_cuti` (`id`, `user_id`, `jenis_cuti`, `tanggal_mulai`, `tanggal_selesai`, `jumlah_hari`, `alasan`, `lampiran`, `catatan_hrd`, `status`, `created_at`) VALUES
+(2, 2, 'Cuti Tahunan', '2026-11-21', '2026-11-22', 1, 'Liburan', NULL, 'Selamat liburan', 'approved', '2026-11-18 10:19:08'),
+(3, 2, 'Cuti Tahunan', '2026-01-01', '2026-01-02', 1, 'mau main GTA 6', NULL, 'no', 'rejected', '2026-11-18 12:36:08'),
+(4, 2, 'Cuti Melahirkan', '2026-01-01', '2026-02-01', 31, 'Lahiran', NULL, 'Semoga lancar dan selamat', 'approved', '2026-11-19 02:25:15'),
+(6, 2, 'Cuti Sakit', '2026-11-19', '2026-11-20', 1, 'Tolong kaki saya sakit', NULL, 'semoga lekas sembuh', 'approved', '2026-11-19 02:34:15'),
+(7, 2, 'Cuti Sakit', '2026-11-24', '2026-11-25', 1, 'sakit demam', '1795500288_6b052900cb71b.pdf', 'semoga lekas sembuh', 'approved', '2026-11-24 06:04:48');
 
 -- --------------------------------------------------------
 
@@ -100,7 +102,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `pengajuan_cuti`
 --
 ALTER TABLE `pengajuan_cuti`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `users`
