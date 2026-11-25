@@ -124,11 +124,19 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
 
                 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                     <h5 class="fw-bold mb-0 text-dark">Seluruh Pengajuan Cuti Karyawan</h5>
-                    <div class="input-group input-group-sm" style="max-width: 240px;">
-                        <span class="input-group-text bg-white border-end-0 text-muted" style="border-radius: 10px 0 0 10px;">
-                            <i class="bi bi-search"></i>
-                        </span>
-                        <input type="text" id="cari" class="form-control border-start-0" style="border-radius: 0 10px 10px 0;" placeholder="Cari nama / NIK...">
+                    <div class="d-flex align-items-center gap-2 flex-nowrap">
+                        
+                        <div class="input-group input-group-sm" style="width: 210px; flex: 0 0 auto;">
+                            <span class="input-group-text bg-white border-end-0 text-muted" style="border-radius: 10px 0 0 10px;">
+                                <i class="bi bi-search"></i>
+                            </span>
+                            <input type="text" id="cari" class="form-control border-start-0" style="border-radius: 0 10px 10px 0;" placeholder="Cari nama / NIK...">
+                        </div>
+
+                        <button type="button" class="btn btn-primary btn-sm rounded-pill px-3 fw-semibold text-nowrap flex-shrink-0" style="background-color: #1e3a8a; border-color: #1e3a8a;" data-bs-toggle="modal" data-bs-target="#modalTambahUser">
+                            <i class="bi bi-person-plus me-1"></i> Tambah User
+                        </button>
+
                     </div>
                 </div>
 
@@ -329,6 +337,54 @@ function tgl($d) { return date('d/m/Y', strtotime($d)); }
                     <button type="submit" class="btn btn-custom-submit px-4 fw-semibold text-14">Simpan Keputusan</button>
                 </div>
   
+            </form>
+        </div>
+    </div>
+
+    <!-- tambah user -->
+    <div class="modal fade" id="modalTambahUser" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form class="modal-content border-0 shadow" style="border-radius: 16px;" action="../proses/proses_tambah_user.php" method="POST">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <h5 class="modal-title fw-bold">Tambah Akun Pengguna</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">NIK</label>
+                        <input type="text" name="nik" class="form-control" maxlength="20" placeholder="Contoh: 123250xxx" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Nama Lengkap</label>
+                        <input type="text" name="nama" class="form-control" maxlength="100" placeholder="Masukkan nama lengkap..." required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Password</label>
+                        <input type="password" name="password" class="form-control" placeholder="Masukkan password..." required>
+                    </div>
+
+                    <div class="row g-2">
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label small fw-semibold">Role</label>
+                            <select name="role" class="form-select">
+                                <option value="karyawan" selected>Karyawan</option>
+                                <option value="hrd">HRD</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label small fw-semibold">Kuota Cuti Tahunan</label>
+                            <input type="number" name="kuota_cuti" class="form-control" value="12" min="0" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-top-0 pt-0">
+                    <button type="button" class="btn btn-custom-reset px-4 fw-semibold text-14" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-custom-submit px-4 fw-semibold text-14">Simpan Akun</button>
+                </div>
             </form>
         </div>
     </div>
